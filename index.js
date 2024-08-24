@@ -9,8 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const uri =
-`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@gearnest1.e6dgi.mongodb.net/?retryWrites=true&w=majority&appName=GearNest1`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@gearnest1.e6dgi.mongodb.net/?retryWrites=true&w=majority&appName=GearNest1`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -27,10 +26,17 @@ async function run() {
     await client.connect();
 
     const menuCollection = client.db("bistroDb").collection("menu");
-    app.get('/menu', async(req,res)=>{
+    const reviewCollection = client.db("bistroDb").collection("reviews");
+
+    // Get menu and reviews data from the database and send it to the client
+    app.get("/menu", async (req, res) => {
       const result = await menuCollection.find().toArray();
       res.send(result);
-    })
+    });
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewCollection.find().toArray();
+      res.send(result);
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
