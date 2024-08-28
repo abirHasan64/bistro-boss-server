@@ -24,18 +24,42 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-
+    // Get the collection
     const menuCollection = client.db("bistroDb").collection("menu");
     const reviewCollection = client.db("bistroDb").collection("reviews");
+    const cartCollection = client.db("bistroDb").collection("carts");
 
-    // Get menu and reviews data from the database and send it to the client
+    // Get menu data from the database and send it to the client
     app.get("/menu", async (req, res) => {
       const result = await menuCollection.find().toArray();
       res.send(result);
     });
+
+    // Get reviews data from the database and send it to the client
     app.get("/reviews", async (req, res) => {
       const result = await reviewCollection.find().toArray();
       res.send(result);
+    });
+
+    // Cart apis
+    // Cart collection data posted to the server
+    app.post("/carts", async (req, res) => {
+      const item = req.body;
+      console.log(item);
+      const result = await cartCollection.insertOne(item);
+      res.send(result);
+    });
+
+    // Get specific cart items based on the email query parameter
+    app.get("/carts", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send([]);
+      } else {
+        const query = { email: email };
+        const result = await cartCollection.find(query).toArray();
+        res.send(result);
+      }
     });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
