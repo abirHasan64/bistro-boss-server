@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const ObjectId = require('mongodb').ObjectId;
 require("dotenv").config();
 port = process.env.PORT || 5000;
 
@@ -45,7 +46,6 @@ async function run() {
     // Cart collection data posted to the server
     app.post("/carts", async (req, res) => {
       const item = req.body;
-      console.log(item);
       const result = await cartCollection.insertOne(item);
       res.send(result);
     });
@@ -60,6 +60,14 @@ async function run() {
         const result = await cartCollection.find(query).toArray();
         res.send(result);
       }
+    });
+
+    // Delete specific cart items based on the id
+    app.delete("/carts/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }; // ObjectId is now defined
+      const result = await cartCollection.deleteOne(query);
+      res.send(result);
     });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
