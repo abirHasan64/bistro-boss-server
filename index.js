@@ -32,11 +32,36 @@ async function run() {
     const cartCollection = client.db("bistroDb").collection("carts");
 
     // Users related apis
-    app.post('/users', async (req, res) => {
+    // Creating users api to get all users
+    app.get("/users", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
+    // Insert a new user in mongo database
+    app.post("/users", async (req, res) => {
       const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await usersCollection.findOne(query);
+      console.log("Existing User: ", existingUser);
+      if (existingUser) {
+        return res.send({ message: "User already exists" });
+      }
       const result = await usersCollection.insertOne(user);
       res.send(result);
-    })
+    });
+
+    app.patch("/users/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }; // ObjectId is now defined
+      const updatedUser = {
+        $set: {
+          role: "admin",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updatedUser);
+      res.send(result);
+    });
 
     // Get menu data from the database and send it to the client
     app.get("/menu", async (req, res) => {
