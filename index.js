@@ -10,21 +10,24 @@ port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Jwt verification middleware
 const verifyJwt = (req, res, next) => {
   const authorization = req.headers.authorization;
   if (!authorization) {
     return res
       .status(401)
-      .send({ error: true, message: "unauthorized access" });
+      .send({ error: true, message: "Unauthorized access" });
   }
-  // bearer token
+
   const token = authorization.split(" ")[1];
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(403).send({ error: true, message: "invalid token" });
+      return res
+        .status(403)
+        .send({ error: true, message: "Invalid or expired token" });
     }
-    req.decoded = decoded;
+    req.decoded = decoded; // Attach decoded token to request
     next();
   });
 };
@@ -61,7 +64,7 @@ async function run() {
 
     // Users related apis
     // Creating users api to get all users
-    app.get("/users", async (req, res) => {
+    app.get("/users", verifyJwt, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
@@ -76,6 +79,22 @@ async function run() {
         return res.send({ message: "User already exists" });
       }
       const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
+    // security layer: verifyjwt
+    // emaail name
+    // check admin
+    app.get("/users/admin/:email", verifyJwt, async (req, res) => {
+      const email = req.params.email;
+      if (req.decoded.email !== email) {
+        return res
+          .status(403)
+          .send({ admin: false, message: "Forbidden access" });
+      }
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { admin: user?.role === "admin" };
       res.send(result);
     });
 
@@ -113,15 +132,24 @@ async function run() {
     });
 
     // Get specific cart items based on the email of user
-    app.get("/carts", async (req, res) => {
+    app.get("/carts", verifyJwt, async (req, res) => {
       const email = req.query.email;
       if (!email) {
-        res.send([]);
-      } else {
-        const query = { email: email };
-        const result = await cartCollection.find(query).toArray();
-        res.send(result);
+        return res
+          .status(400)
+          .send({ error: true, message: "Email is required" });
       }
+
+      const decodedEmail = req.decoded.email;
+      if (email !== decodedEmail) {
+        return res
+          .status(403)
+          .send({ error: true, message: "Forbidden access" });
+      }
+
+      const query = { email: email };
+      const result = await cartCollection.find(query).toArray();
+      res.send(result);
     });
 
     // Delete specific cart items based on the user id
