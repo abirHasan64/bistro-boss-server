@@ -66,6 +66,7 @@ async function run() {
       }
       next();
     };
+
     app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
@@ -95,7 +96,7 @@ async function run() {
     });
 
     // security layer: verifyjwt
-    // emaail name
+    // email name
     // check admin
     app.get("/users/admin/:email", verifyJwt, async (req, res) => {
       const email = req.params.email;
@@ -126,6 +127,13 @@ async function run() {
     // Get menu data from the database and send it to the client
     app.get("/menu", async (req, res) => {
       const result = await menuCollection.find().toArray();
+      res.send(result);
+    });
+
+    // menu additems from admin
+    app.post("/menu", verifyJwt, verifyAdmin, async (req, res) => {
+      const newItem = req.body;
+      result = await menuCollection.insertOne(newItem);
       res.send(result);
     });
 
