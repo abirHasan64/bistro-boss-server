@@ -59,6 +59,7 @@ async function run() {
       const email = req.decoded.email;
       const query = { email: email };
       const user = await usersCollection.findOne(query);
+
       if (user?.role !== "admin") {
         return res
           .status(403)
@@ -70,7 +71,7 @@ async function run() {
     app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: "24h",
+        expiresIn: "48h",
       });
       res.send({ token });
     });
@@ -124,6 +125,7 @@ async function run() {
       res.send(result);
     });
 
+    // Menu related apis
     // Get menu data from the database and send it to the client
     app.get("/menu", async (req, res) => {
       const result = await menuCollection.find().toArray();
@@ -134,6 +136,15 @@ async function run() {
     app.post("/menu", verifyJwt, verifyAdmin, async (req, res) => {
       const newItem = req.body;
       result = await menuCollection.insertOne(newItem);
+      res.send(result);
+    });
+
+    // delete  specific item from menu
+    app.delete("/menu/:id", verifyJwt, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: new ObjectId(id) }; // ObjectId is now defined
+      const result = await menuCollection.deleteOne(query);
       res.send(result);
     });
 
